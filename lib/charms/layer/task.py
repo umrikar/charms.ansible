@@ -104,13 +104,12 @@ class Runner(object):
     def __init__(self,
                  playbooks,
                  tags,  # must have
-                 extra_vars={},
+                 extra_vars=,
                  hostnames='127.0.0.1',
                  connection='local',  # smart|ssh|local
                  private_key_file='',
                  become_pass='',
                  vault_pass='',
-                 playbook_path=None,
                  verbosity=0):
 
         self.options = Options()
@@ -167,10 +166,9 @@ class Runner(object):
         # Playbook to run. Assumes it is
         # local and relative to this python file
         # in "../../../playbooks" directory.
-        if not playbook_path:
-            dirname = os.path.dirname(__file__) or '.'
-            pb_rel_dir = '../../../playbooks'
-            playbook_path = os.path.join(dirname, pb_rel_dir)
+        dirname = os.path.dirname(__file__) or '.'
+        pb_rel_dir = '../../../playbooks'
+        playbook_path = os.path.join(dirname, pb_rel_dir)
         self.options.module_path = os.path.join(playbook_path, 'library')
 
         # os.environ['ANSIBLE_CONFIG'] = os.path.abspath(os.path.dirname(__file__))

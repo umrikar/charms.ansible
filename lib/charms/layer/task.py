@@ -110,6 +110,7 @@ class Runner(object):
                  private_key_file='',
                  become_pass='',
                  vault_pass='',
+                 playbook_path=None,
                  verbosity=0):
 
         self.options = Options()
@@ -166,15 +167,14 @@ class Runner(object):
         # Playbook to run. Assumes it is
         # local and relative to this python file
         # in "../../../playbooks" directory.
-        dirname = os.path.dirname(__file__) or '.'
-        pb_rel_dir = '../../../playbooks'
-        pb_dir = os.path.join(dirname, pb_rel_dir)
-        self.options.module_path = os.path.join(pb_dir, 'library')
+        if not playbook_path:
+            dirname = os.path.dirname(__file__) or '.'
+            pb_rel_dir = '../../../playbooks'
+            playbook_path = os.path.join(dirname, pb_rel_dir)
+        self.options.module_path = os.path.join(playbook_path, 'library')
 
         # os.environ['ANSIBLE_CONFIG'] = os.path.abspath(os.path.dirname(__file__))
-
-        # pbs = ["%s/%s" % (pb_dir, pb) for pb in playbooks]
-        pbs = [os.path.join(pb_dir, pb) for pb in playbooks]
+        pbs = [os.path.join(playbook_path, pb) for pb in playbooks]
 
         # Setup playbook executor, but don't run until run() called
         self.pbex = playbook_executor.PlaybookExecutor(

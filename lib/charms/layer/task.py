@@ -211,7 +211,7 @@ class Runner(object):
         # the printed cmd line is exactly the same, and can be executed
         # if I copy & paste in a terminal. So strange!
         return_code = subprocess.call(' '.join(self.callme), shell=True)
-        return True if return_code == 0 else False, {}
+        return True if return_code == 0 else False
 
         # self.pbex.run()
         # stats = self.pbex._tqm._stats

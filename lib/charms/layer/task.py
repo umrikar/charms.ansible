@@ -198,6 +198,8 @@ class Runner(object):
         if extra_vars:
             extra = ["%s=%s" % (k, v) for k, v in extra_vars.items()]
             self.callme += ['--extra-vars', '"%s"' % (' '.join(extra))]
+        if self.options.module_path:
+            self.callme += ['--module-path',self.options.module_path]
 
     def run(self):
         # Results of PlaybookExecutor

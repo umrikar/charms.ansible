@@ -110,8 +110,9 @@ class Runner(object):
                  private_key_file='',
                  become_pass='',
                  vault_pass='',
-                 verbosity=0):
-
+                 verbosity=0,
+                 debug=False):
+        self.debug = debug
         self.options = Options()
         self.options.tags = tags,
         self.options.private_key_file = private_key_file

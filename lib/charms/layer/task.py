@@ -1,6 +1,6 @@
 import os
 from tempfile import NamedTemporaryFile
-
+import subprocess
 from ansible.executor import playbook_executor
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader

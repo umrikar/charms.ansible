@@ -168,7 +168,7 @@ class Runner(object):
             self.verbosity 
         ]
         if self.tags:
-            self.callme += ['--tags', ','.join(tags)]
+            self.callme += ['--tags', tags]
         if self.extra_vars:
             self.extra_vars_file = os.path.join(os.getenv('HOME'),"extra_vars.json") 
             with open(self.extra_vars_file, "wt") as fp:

@@ -106,7 +106,7 @@ class Runner(object):
                  become_pass='',
                  vault_pass='',
                  verbosity=0,
-                 debug=True):
+                 debug=False):
         self.debug = debug
         self.private_key_file = private_key_file
         self.become = True

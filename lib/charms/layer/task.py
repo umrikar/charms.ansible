@@ -1,12 +1,7 @@
 import os
+import subprocess
 from tempfile import NamedTemporaryFile
-
-from ansible.executor import playbook_executor
-from ansible.inventory.manager import InventoryManager
-from ansible.parsing.dataloader import DataLoader
-from ansible.utils.display import Display
-from ansible.vars.manager import VariableManager
-
+import json
 
 class Options(object):
     """
@@ -19,7 +14,7 @@ class Options(object):
                  subset=None,
                  module_paths=None,
                  extra_vars=None,
-                 forks=1,
+                 forks=None,
                  ask_vault_pass=None,
                  vault_password_files=None,
                  new_vault_password_file=None,
@@ -104,40 +99,35 @@ class Runner(object):
     def __init__(self,
                  playbooks,
                  tags,  # must have
-                 listtags=[],
-                 extra_vars={},
+                 extra_vars,
                  hostnames='127.0.0.1',
                  connection='local',  # smart|ssh|local
                  private_key_file='',
                  become_pass='',
                  vault_pass='',
-                 verbosity=0):
-
-        self.options = Options()
-        self.options.tags = tags,
-        self.options.listtags= listtags,
-        self.options.private_key_file = private_key_file
-        self.options.verbosity = verbosity
-        self.options.connection = connection
-        self.options.become = True
-        self.options.become_method = 'sudo'
-        self.options.become_user = 'root'
-        self.options.extra_vars = extra_vars
-
-        # Set global verbosity
-        self.display = Display()
-        self.display.verbosity = self.options.verbosity
-
-        # Executor appears to have it's own
-        # verbosity object/setting as well
-        playbook_executor.verbosity = self.options.verbosity
+                 verbosity=0,
+                 debug=True):
+        self.debug = debug
+        self.private_key_file = private_key_file
+        self.become = True
+        self.become_method = 'sudo'
+        self.become_user = 'root'
+        self.become_pass = become_pass
+        self.connection = connection
+        self.tags = tags
+        self.extra_vars = extra_vars
+        self.playbooks = playbooks
+        self.hostnames = hostnames
+        if verbosity==0:
+            self.verbosity=''
+        else:
+            self.verbosity = '-' + verbosity*'v'
+        self.vault_pass = vault_pass
+    
 
         # Become Pass Needed if not logging in as user root
-        passwords = {'become_pass': become_pass}
+        passwords = {'become_pass': self.become_pass}
 
-        # Gets data from YAML/JSON files
-        self.loader = DataLoader()
-        self.loader.set_vault_secrets(vault_pass)
         # Parse hosts, I haven't found a good way to
         # pass hosts in without using a parsed template :(
         # (Maybe you know how?)
@@ -153,61 +143,46 @@ class Runner(object):
         # if isinstance(hostnames, str):
         # hostnames = {"customers": {"hosts": [hostnames]}}
 
-        # Set inventory, using most of above objects
-        self.inventory = InventoryManager(
-            loader=self.loader, sources=[self.hosts.name])
-
-        # All the variables from all the various places
-        self.variable_manager = VariableManager(loader=self.loader,
-           inventory=self.inventory)
-
-        self.variable_manager.extra_vars = extra_vars
 
         # Playbook to run. Assumes it is
         # local and relative to this python file
         # in "../../../playbooks" directory.
         dirname = os.path.dirname(__file__) or '.'
         pb_rel_dir = '../../../playbooks'
-        pb_dir = os.path.join(dirname, pb_rel_dir)
-        self.options.module_path = os.path.join(pb_dir, 'library')
+        playbook_path = os.path.join(dirname, pb_rel_dir)
+        self.module_path = os.path.join(playbook_path, 'library')
 
         # os.environ['ANSIBLE_CONFIG'] = os.path.abspath(os.path.dirname(__file__))
+        pbs = [os.path.join(playbook_path, pb) for pb in self.playbooks]
 
-        # pbs = ["%s/%s" % (pb_dir, pb) for pb in playbooks]
-        pbs = [os.path.join(pb_dir, pb) for pb in playbooks]
 
-        # Setup playbook executor, but don't run until run() called
-        self.pbex = playbook_executor.PlaybookExecutor(
-            playbooks=pbs,
-            inventory=self.inventory,
-            variable_manager=self.variable_manager,
-            loader=self.loader,
-            options=self.options,
-            passwords=passwords)
+        # TODO: so here we construct a CLI line.
+        # For whatever reason, api is not taking account for `tags`!!
+        self.callme = [
+            'ansible-playbook',
+            '-i',
+            self.hosts.name,
+            ','.join(pbs),
+            '-c',
+            self.connection,
+            self.verbosity 
+        ]
+        if self.tags:
+            self.callme += ['--tags', ','.join(tags)]
+        if self.extra_vars:
+            self.extra_vars_file = os.path.join(os.getenv('HOME'),"extra_vars.json") 
+            with open(self.extra_vars_file, "wt") as fp:
+                json.dump(extra_vars, fp)
+            self.callme += ['--extra-vars', ' "@%s"' % (self.extra_vars_file)]
+        if self.module_path:
+            self.callme += ['--module-path',self.module_path]
 
     def run(self):
-        # Results of PlaybookExecutor
-        self.pbex.run()
-        stats = self.pbex._tqm._stats
+        if self.debug:
+            print "ansbile cmd: ", ' '.join(self.callme)
 
-        # Test if success for record_logs
-        run_success = True
-        hosts = sorted(stats.processed.keys())
-        for h in hosts:
-            t = stats.summarize(h)
-            if t['unreachable'] > 0 or t['failures'] > 0:
-                run_success = False
+        return_code = subprocess.call(' '.join(self.callme), shell=True)
+        #os.remove(self.extra_vars_file)
+        #os.remove(self.hosts.name)
+        return True if return_code == 0 else False
 
-        # Dirty hack to send callback to save logs with data we want
-        # Note that function "record_logs" is one I created and put into
-        # the playbook callback file
-        # self.pbex._tqm.send_callback(
-        #     'record_logs',
-        #     user_id=self.extra_vars['user_id'],
-        #     success=run_success
-        # )
-
-        # Remove created temporary files
-        os.remove(self.hosts.name)
-
-        return run_success, stats

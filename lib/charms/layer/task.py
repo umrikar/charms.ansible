@@ -167,7 +167,7 @@ class Runner(object):
         if self.tags:
             self.callme += ['--tags', tags]
         if self.extra_vars:
-            self.extra_vars_file = os.path.join(os.getenv('HOME'),"extra_vars.json") 
+            self.extra_vars_file = os.path.join(os.path.expanduser('~'),"extra_vars.json") 
             with open(self.extra_vars_file, "wt") as fp:
                 json.dump(extra_vars, fp)
             self.callme += ['--extra-vars', '"@%s"' % (self.extra_vars_file)]

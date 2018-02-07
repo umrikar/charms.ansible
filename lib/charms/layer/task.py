@@ -140,9 +140,6 @@ class Runner(object):
         # Also Note: In py2.7, "isinstance(foo, str)" is valid for
         #            latin chars only. Luckily, hostnames are
         #            ascii-only, which overlaps latin charset
-        # if isinstance(hostnames, str):
-        # hostnames = {"customers": {"hosts": [hostnames]}}
-
 
         # Playbook to run. Assumes it is
         # local and relative to this python file
@@ -183,6 +180,6 @@ class Runner(object):
 
         return_code = subprocess.call(' '.join(self.callme), shell=True)
         #os.remove(self.extra_vars_file)
-        #os.remove(self.hosts.name)
+        os.remove(self.hosts.name)
         return True if return_code == 0 else False
 

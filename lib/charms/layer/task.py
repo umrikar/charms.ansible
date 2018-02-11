@@ -176,7 +176,7 @@ class Runner(object):
 
     def run(self):
         if self.debug:
-            print "ansbile cmd: ", ' '.join(self.callme)
+            print("ansbile cmd: ", ' '.join(self.callme))
 
         return_code = subprocess.call(' '.join(self.callme), shell=True)
         #os.remove(self.extra_vars_file)

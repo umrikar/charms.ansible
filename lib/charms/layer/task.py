@@ -86,7 +86,6 @@ class Runner(object):
             print("ansbile cmd: ", ' '.join(self.callme))
 
         return_code = subprocess.call(' '.join(self.callme), shell=True)
-        #os.remove(self.extra_vars_file)
         os.remove(self.hosts.name)
         return True if return_code == 0 else False
 

@@ -55,7 +55,7 @@ class Runner(object):
             self.callme += ['--tags', tags]
         if self.extra_vars:
             evars = json.dumps(self.extra_vars)
-            self.callme += ['--extra-vars', '"%s"' %(evars)]
+            self.callme += ['--extra-vars', "'%s'" %(evars)]
         if self.module_path:
             self.callme += ['--module-path',self.module_path]
 
